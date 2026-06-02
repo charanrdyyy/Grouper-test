@@ -16,13 +16,15 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
 
       - name: Checkout Source
         uses: actions/checkout@v4
+
+      - name: Set Image Tag
+        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
       - name: Azure Login
         uses: azure/login@v2
@@ -40,7 +42,7 @@ jobs:
           docker build \
             -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG \
             -t $REGISTRY/$IMAGE_NAME:latest \
-            ./grouper-test
+            .
 
       - name: Push Version Tag
         run: |
@@ -49,3 +51,8 @@ jobs:
       - name: Push Latest Tag
         run: |
           docker push $REGISTRY/$IMAGE_NAME:latest
+
+      - name: Show Image Details
+        run: |
+          echo "Pushed image:"
+          echo "$REGISTRY/$IMAGE_NAME:$IMAGE_TAG"
