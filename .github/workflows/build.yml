@@ -13,6 +13,7 @@ env:
   ACR_NAME: grouperdevacr001
   REGISTRY: grouperdevacr001.azurecr.io
   IMAGE_NAME: demo-app
+  IMAGE_TAG: v1
 
 jobs:
   build:
