@@ -38,12 +38,13 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build \
-            -t $REGISTRY/$IMAGE_NAME:${{ github.sha }} \
-            -t $REGISTRY/$IMAGE_NAME:latest .
+            -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG \
+            -t $REGISTRY/$IMAGE_NAME:latest \
+            ./grouper-test
 
-      - name: Push SHA Tag
+      - name: Push Version Tag
         run: |
-          docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+          docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
 
       - name: Push Latest Tag
         run: |
