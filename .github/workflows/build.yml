@@ -13,7 +13,7 @@ env:
   ACR_NAME: grouperdevacr001
   REGISTRY: grouperdevacr001.azurecr.io
   IMAGE_NAME: demo-app
-  IMAGE_TAG: v1
+
 
 jobs:
   build:
@@ -41,19 +41,13 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build \
-            -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG \
-            -t $REGISTRY/$IMAGE_NAME:latest \
-            .
+            -t $REGISTRY/$IMAGE_NAME:${{ github.sha }} \
+            -t $REGISTRY/$IMAGE_NAME:latest .
 
-      - name: Push Version Tag
+      - name: Push SHA Tag
         run: |
-          docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+          docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}
 
       - name: Push Latest Tag
         run: |
           docker push $REGISTRY/$IMAGE_NAME:latest
-
-      - name: Show Image Details
-        run: |
-          echo "Pushed image:"
-          echo "$REGISTRY/$IMAGE_NAME:$IMAGE_TAG"
