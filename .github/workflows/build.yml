@@ -1,9 +1,13 @@
-name: Build and Push to ACR
+name: Build and Push Container Image
 
 on:
   push:
     branches:
       - main
+    paths:
+      - 'Dockerfile'
+      - 'app.py'
+      - 'requirements.txt'
 
 permissions:
   id-token: write
@@ -13,18 +17,19 @@ env:
   ACR_NAME: grouperdevacr001
   REGISTRY: grouperdevacr001.azurecr.io
   IMAGE_NAME: demo-app
+  MANIFEST_PATH: apps/demo-app
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Source
+      - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set Image Tag
+      - name: Generate Image Tag
         run: |
           echo "IMAGE_TAG=${GITHUB_SHA::7}-r${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
 
@@ -35,17 +40,17 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Login to ACR
+      - name: Login to Azure Container Registry
         run: |
           az acr login --name $ACR_NAME
 
-      - name: Build Docker Image
+      - name: Build Container Image
         run: |
           docker build \
             -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG \
             .
 
-      - name: Push Image
+      - name: Push Container Image
         run: |
           docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
 
@@ -54,28 +59,24 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-      - name: Checkout GitOps Branch
+      - name: Update Kustomization Image Tag
         run: |
-          git fetch origin gitops
-          git checkout gitops
-
-      - name: Update GitOps Image Tag
-        run: |
-          sed -i "s/newTag:.*/newTag: $IMAGE_TAG/" apps/demo-app/kustomization.yaml
+          sed -i "s|newTag:.*|newTag: $IMAGE_TAG|g" \
+            $MANIFEST_PATH/kustomization.yaml
 
           echo "Updated kustomization.yaml:"
-          cat apps/demo-app/kustomization.yaml
+          cat $MANIFEST_PATH/kustomization.yaml
 
-      - name: Commit Changes
+      - name: Commit Manifest Changes
         run: |
-          git add apps/demo-app/kustomization.yaml
+          git add $MANIFEST_PATH/kustomization.yaml
 
-          if git diff --staged --quiet; then
+          if git diff --cached --quiet; then
             echo "No changes detected"
           else
-            git commit -m "Deploy image $IMAGE_TAG"
+            git commit -m "[skip ci] Deploy image $IMAGE_TAG"
           fi
 
       - name: Push Changes
         run: |
-          git push origin gitops
+          git push origin main
